@@ -38,10 +38,12 @@ class DatabaseFactory(object):
                     self.cache = self.target_class()
                     init_handler(self.cache)
                 except:
-                    self.cache.stop()
+                    if self.cache:
+                        self.cache.stop()
                     raise
                 finally:
-                    self.cache.terminate()
+                    if self.cache:
+                        self.cache.terminate()
             else:
                 self.cache = self.target_class(auto_start=0)
                 self.cache.setup()
