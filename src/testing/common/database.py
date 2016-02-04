@@ -59,6 +59,7 @@ class DatabaseFactory(object):
 
 
 class Database(object):
+    BOOT_TIMEOUT = 10.0
     DEFAULT_SETTINGS = {}
     subdirectories = []
 
@@ -163,7 +164,7 @@ class Database(object):
             if self.is_server_available():
                 break
 
-            if (datetime.now() - exec_at).seconds > 10.0:
+            if (datetime.now() - exec_at).seconds > self.BOOT_TIMEOUT:
                 raise RuntimeError("*** failed to launch %s (timeout) ***\n" % self.name +
                                    self.read_bootlog())
 
