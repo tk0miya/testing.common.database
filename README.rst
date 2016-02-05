@@ -189,6 +189,13 @@ Apache License 2.0
 History
 =======
 
+1.1.0 (2016-02-05)
+-------------------
+* Add Database#server_pid to get pid of the database server
+* Add Database#is_alive() to check server is alive
+* Define BOOT_TIMEOUT as constant
+* Fix AttributeError if any exceptions are raised in bootstrap
+
 1.0.0 (2016-02-01)
 -------------------
 * Initial release
