@@ -180,6 +180,13 @@ class Database(object):
     def is_server_available(self):
         return False
 
+    def is_alive(self):
+        try:
+            os.kill(self.pid, 0)
+            return True
+        except:
+            return False
+
     def stop(self, _signal=signal.SIGTERM):
         try:
             self.terminate(_signal)

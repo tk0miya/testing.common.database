@@ -91,6 +91,10 @@ class Database(object):
           else:
               return True
 
+    def is_alive(self):
+
+        Methods check the database server is alive.
+
 class DatabaseFactory(object):
 
     ``DatabaseFactory`` is a factory class for the database class.
