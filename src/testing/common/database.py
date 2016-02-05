@@ -67,7 +67,7 @@ class Database(object):
         self.name = self.__class__.__name__
         self.settings = dict(self.DEFAULT_SETTINGS)
         self.settings.update(kwargs)
-        self.pid = None
+        self.child_process = None
         self._owner_pid = os.getpid()
         self._use_tmpdir = False
 
@@ -125,31 +125,26 @@ class Database(object):
         pass
 
     def start(self):
-        if self.pid:
+        if self.child_process:
             return  # already started
 
         self.prestart()
 
         logger = open(os.path.join(self.base_dir, '%s.log' % self.name), 'wt')
-        self.pid = os.fork()
-        if self.pid == 0:
-            os.dup2(logger.fileno(), sys.__stdout__.fileno())
-            os.dup2(logger.fileno(), sys.__stderr__.fileno())
-
-            try:
-                command = self.get_server_commandline()
-                os.execl(command[0], *command)
-            except Exception as exc:
-                raise RuntimeError('failed to launch %s: %r' % (self.name, exc))
+        try:
+            command = self.get_server_commandline()
+            self.child_process = subprocess.Popen(command, stdout=logger, stderr=logger)
+        except Exception as exc:
+            raise RuntimeError('failed to launch %s: %r' % (self.name, exc))
         else:
-            logger.close()
-
             try:
                 self.wait_booting()
                 self.poststart()
             except:
                 self.stop()
                 raise
+        finally:
+            logger.close()
 
     def get_server_commandline(self):
         raise NotImplemented
@@ -157,7 +152,7 @@ class Database(object):
     def wait_booting(self):
         exec_at = datetime.now()
         while True:
-            if os.waitpid(self.pid, os.WNOHANG)[0] != 0:
+            if self.child_process.poll() is not None:
                 raise RuntimeError("*** failed to launch %s ***\n" % self.name +
                                    self.read_bootlog())
 
@@ -181,15 +176,11 @@ class Database(object):
         return False
 
     def is_alive(self):
-        try:
-            os.kill(self.pid, 0)
-            return True
-        except:
-            return False
+        return self.child_process and self.child_process.poll() is None
 
     @property
     def server_pid(self):
-        return self.pid
+        return getattr(self.child_process, 'pid', None)
 
     def stop(self, _signal=signal.SIGTERM):
         try:
@@ -198,28 +189,28 @@ class Database(object):
             self.cleanup()
 
     def terminate(self, _signal=signal.SIGTERM):
-        if self.pid is None:
+        if self.child_process is None:
             return  # not started
 
         if self._owner_pid != os.getpid():
             return  # could not stop in child process
 
         try:
-            os.kill(self.pid, _signal)
+            self.child_process.send_signal(_signal)
             killed_at = datetime.now()
-            while (os.waitpid(self.pid, os.WNOHANG)):
+            while self.child_process.poll() is None:
                 if (datetime.now() - killed_at).seconds > 10.0:
-                    os.kill(self.pid, signal.SIGKILL)
+                    os.child_process.kill()
                     raise RuntimeError("*** failed to shutdown postgres (timeout) ***\n" + self.read_bootlog())
 
                 sleep(0.1)
         except OSError:
             pass
 
-        self.pid = None
+        self.child_process = None
 
     def cleanup(self):
-        if self.pid is not None:
+        if self.child_process is not None:
             return
 
         if self._use_tmpdir and os.path.exists(self.base_dir):
