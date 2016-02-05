@@ -95,6 +95,12 @@ class Database(object):
 
         Methods check the database server is alive.
 
+    @property
+    def server_pid(self):
+
+        Process ID of the database server.
+
+
 class DatabaseFactory(object):
 
     ``DatabaseFactory`` is a factory class for the database class.

@@ -187,6 +187,10 @@ class Database(object):
         except:
             return False
 
+    @property
+    def server_pid(self):
+        return self.pid
+
     def stop(self, _signal=signal.SIGTERM):
         try:
             self.terminate(_signal)
