@@ -225,7 +225,17 @@ class Database(object):
             raise RuntimeError("failed to open file:%s.log: %r" % (self.name, exc))
 
     def __del__(self):
-        self.stop()
+        try:
+            self.stop()
+        except:
+            errmsg = ('ERROR: testing.common.database: failed to shutdown the server automatically.\n'
+                      'Any server processes and files might have been leaked. Please remove them and '
+                      'call the stop() certainly')
+            try:
+                sys.__stderr__.write(errmsg)
+            except:
+                # if sys module is already unloaded by GC
+                print errmsg
 
     def __enter__(self):
         return self
