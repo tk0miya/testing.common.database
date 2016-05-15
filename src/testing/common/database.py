@@ -213,9 +213,12 @@ class Database(object):
         if self.child_process is not None:
             return
 
-        if self._use_tmpdir and os.path.exists(self.base_dir):
-            rmtree(self.base_dir, ignore_errors=True)
-            self._use_tmpdir = False
+        try:
+            if self._use_tmpdir and os.path.exists(self.base_dir):
+                rmtree(self.base_dir, ignore_errors=True)
+                self._use_tmpdir = False
+        except (AttributeError, TypeError):
+            pass
 
     def read_bootlog(self):
         try:
