@@ -60,7 +60,7 @@ class DatabaseFactory(object):
 
 
 class Database(object):
-    BOOT_TIMEOUT = 10.0
+    DEFAULT_BOOT_TIMEOUT = 10.0
     DEFAULT_SETTINGS = {}
     subdirectories = []
 
@@ -151,6 +151,7 @@ class Database(object):
         raise NotImplemented
 
     def wait_booting(self):
+        boot_timeout = self.settings.get('boot_timeout', self.DEFAULT_BOOT_TIMEOUT)
         exec_at = datetime.now()
         while True:
             if self.child_process.poll() is not None:
@@ -160,7 +161,7 @@ class Database(object):
             if self.is_server_available():
                 break
 
-            if (datetime.now() - exec_at).seconds > self.BOOT_TIMEOUT:
+            if (datetime.now() - exec_at).seconds > boot_timeout:
                 raise RuntimeError("*** failed to launch %s (timeout) ***\n" % self.name +
                                    self.read_bootlog())
 
