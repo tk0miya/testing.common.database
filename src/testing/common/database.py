@@ -22,6 +22,7 @@ import subprocess
 from time import sleep
 from shutil import copytree, rmtree
 from datetime import datetime
+import collections
 
 
 class DatabaseFactory(object):
@@ -235,7 +236,7 @@ class Database(object):
                 sys.__stderr__.write(errmsg)
             except:
                 # if sys module is already unloaded by GC
-                print errmsg
+                print(errmsg)
 
     def __enter__(self):
         return self
@@ -268,7 +269,7 @@ class SkipIfNotInstalledDecorator(object):
 
             return skipIf(cond, "%s not found" % self.name)(fn)
 
-        if callable(arg):  # execute as simple decorator
+        if isinstance(arg, collections.Callable):  # execute as simple decorator
             return decorator(arg, None)
         else:  # execute with path argument
             return decorator
