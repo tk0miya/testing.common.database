@@ -189,6 +189,16 @@ Apache License 2.0
 History
 =======
 
+2.0.0 (2016-08-20)
+-------------------
+* Use subprocess.Popen() instead of fork & exec
+* Support windows platform (experimental)
+* #4: Add boot_timeout parameter
+* Fix bugs:
+
+  - Fix syntax errors for Python3
+  - Show error messages if rescue from GC failed (ref: #1)
+
 1.1.0 (2016-02-05)
 -------------------
 * Add Database#server_pid to get pid of the database server

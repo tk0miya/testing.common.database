@@ -25,7 +25,7 @@ if sys.version_info < (2, 7):
 
 setup(
     name='testing.common.database',
-    version='1.1.0',
+    version='2.0.0',
     description='utilities for testing.* packages',
     long_description=open('README.rst').read(),
     classifiers=classifiers,
