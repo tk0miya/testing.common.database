@@ -63,6 +63,7 @@ class Database(object):
     DEFAULT_BOOT_TIMEOUT = 10.0
     DEFAULT_SETTINGS = {}
     subdirectories = []
+    terminate_signal = signal.SIGTERM
 
     def __init__(self, **kwargs):
         self.name = self.__class__.__name__
@@ -71,6 +72,9 @@ class Database(object):
         self.child_process = None
         self._owner_pid = os.getpid()
         self._use_tmpdir = False
+
+        if os.name == 'nt':
+            self.terminate_signal = signal.CTRL_BREAK_EVENT
 
         self.base_dir = self.settings.pop('base_dir')
         if self.base_dir:
@@ -134,7 +138,11 @@ class Database(object):
         logger = open(os.path.join(self.base_dir, '%s.log' % self.name), 'wt')
         try:
             command = self.get_server_commandline()
-            self.child_process = subprocess.Popen(command, stdout=logger, stderr=logger)
+            flags = 0
+            if os.name == 'nt':
+                flags |= subprocess.CREATE_NEW_PROCESS_GROUP
+            self.child_process = subprocess.Popen(command, stdout=logger, stderr=logger,
+                                                  creationflags=flags)
         except Exception as exc:
             raise RuntimeError('failed to launch %s: %r' % (self.name, exc))
         else:
@@ -190,12 +198,15 @@ class Database(object):
         finally:
             self.cleanup()
 
-    def terminate(self, _signal=signal.SIGTERM):
+    def terminate(self, _signal=None):
         if self.child_process is None:
             return  # not started
 
         if self._owner_pid != os.getpid():
             return  # could not stop in child process
+
+        if _signal is None:
+            _signal = self.terminate_signal
 
         try:
             self.child_process.send_signal(_signal)
@@ -286,7 +297,11 @@ def get_unused_port():
 
 
 def get_path_of(name):
-    path = subprocess.Popen(['/usr/bin/which', name],
+    if os.name == 'nt':
+        which = 'where'
+    else:
+        which = '/usr/bin/which'
+    path = subprocess.Popen([which, name],
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE).communicate()[0]
     if path:
