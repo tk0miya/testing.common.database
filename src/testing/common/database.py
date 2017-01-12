@@ -13,6 +13,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import copy
 import os
 import sys
 import signal
@@ -36,7 +37,7 @@ class DatabaseFactory(object):
         if self.settings.pop('cache_initialized_db', None):
             if init_handler:
                 try:
-                    self.cache = self.target_class()
+                    self.cache = self.target_class(**self.settings)
                     init_handler(self.cache)
                 except:
                     if self.cache:
@@ -46,7 +47,9 @@ class DatabaseFactory(object):
                     if self.cache:
                         self.cache.terminate()
             else:
-                self.cache = self.target_class(auto_start=0)
+                settings_noautostart = copy.deepcopy(self.settings)
+                settings_noautostart.update({"autostart": 0})
+                self.cache = self.target_class(**settings_noautostart)
                 self.cache.setup()
             self.settings['copy_data_from'] = self.cache.get_data_directory()
 
