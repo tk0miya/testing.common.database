@@ -213,7 +213,7 @@ class Database(object):
             killed_at = datetime.now()
             while self.child_process.poll() is None:
                 if (datetime.now() - killed_at).seconds > 10.0:
-                    os.child_process.kill()
+                    self.child_process.kill()
                     raise RuntimeError("*** failed to shutdown postgres (timeout) ***\n" + self.read_bootlog())
 
                 sleep(0.1)
