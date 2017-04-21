@@ -300,7 +300,7 @@ def get_path_of(name):
     if os.name == 'nt':
         which = 'where'
     else:
-        which = '/usr/bin/which'
+        which = 'which'
     path = subprocess.Popen([which, name],
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE).communicate()[0]
