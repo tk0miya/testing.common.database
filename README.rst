@@ -189,6 +189,12 @@ Apache License 2.0
 History
 =======
 
+2.0.1 (2017-07-15)
+-------------------
+* #9: Database always gets instantiated with correct settings
+* #10: Remove explicit path to which
+* #11: Make database server kill-timeout more configurable
+
 2.0.0 (2016-08-20)
 -------------------
 * Use subprocess.Popen() instead of fork & exec
