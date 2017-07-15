@@ -61,6 +61,7 @@ class DatabaseFactory(object):
 
 class Database(object):
     DEFAULT_BOOT_TIMEOUT = 10.0
+    DEFAULT_KILL_TIMEOUT = 10.0
     DEFAULT_SETTINGS = {}
     subdirectories = []
     terminate_signal = signal.SIGTERM
@@ -212,7 +213,7 @@ class Database(object):
             self.child_process.send_signal(_signal)
             killed_at = datetime.now()
             while self.child_process.poll() is None:
-                if (datetime.now() - killed_at).seconds > 10.0:
+                if (datetime.now() - killed_at).seconds > self.DEFAULT_KILL_TIMEOUT:
                     self.child_process.kill()
                     raise RuntimeError("*** failed to shutdown postgres (timeout) ***\n" + self.read_bootlog())
 
