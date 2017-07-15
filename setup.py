@@ -31,7 +31,7 @@ setup(
     classifiers=classifiers,
     keywords=[],
     author='Takeshi Komiya',
-    author_email='i.tkomiya at gmail.com',
+    author_email='i.tkomiya@gmail.com',
     url='https://github.com/tk0miya/testing.common.database',
     license='Apache License 2.0',
     packages=find_packages('src'),
