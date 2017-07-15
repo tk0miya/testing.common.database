@@ -185,6 +185,11 @@ License
 =======
 Apache License 2.0
 
+Release signatures
+==================
+Releases are signed with following keys:
+
+* `498D6B9E <https://pgp.mit.edu/pks/lookup?op=vindex&search=0x102C2C17498D6B9E>`_
 
 History
 =======
