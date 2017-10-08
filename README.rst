@@ -194,6 +194,12 @@ Releases are signed with following keys:
 History
 =======
 
+2.0.2 (2017-10-08)
+-------------------
+* Fix a bug:
+
+  - #18: Fix launch when using cache_initialized_db without init_handler 
+
 2.0.1 (2017-07-15)
 -------------------
 * #9: Database always gets instantiated with correct settings
