@@ -48,7 +48,7 @@ class DatabaseFactory(object):
                         self.cache.terminate()
             else:
                 settings_noautostart = copy.deepcopy(self.settings)
-                settings_noautostart.update({"autostart": 0})
+                settings_noautostart.update({"auto_start": 0})
                 self.cache = self.target_class(**settings_noautostart)
                 self.cache.setup()
             self.settings['copy_data_from'] = self.cache.get_data_directory()
