@@ -39,7 +39,7 @@ class DatabaseFactory(object):
                 try:
                     self.cache = self.target_class(**self.settings)
                     init_handler(self.cache)
-                except:
+                except Exception:
                     if self.cache:
                         self.cache.stop()
                     raise
@@ -96,7 +96,7 @@ class Database(object):
                     self.setup()
 
                 self.start()
-        except:
+        except Exception:
             self.cleanup()
             raise
 
@@ -123,7 +123,7 @@ class Database(object):
 
         try:
             self.initialize_database()
-        except:
+        except Exception:
             self.cleanup()
             raise
 
@@ -153,7 +153,7 @@ class Database(object):
             try:
                 self.wait_booting()
                 self.poststart()
-            except:
+            except Exception:
                 self.stop()
                 raise
         finally:
@@ -244,13 +244,13 @@ class Database(object):
     def __del__(self):
         try:
             self.stop()
-        except:
+        except Exception:
             errmsg = ('ERROR: testing.common.database: failed to shutdown the server automatically.\n'
                       'Any server processes and files might have been leaked. Please remove them and '
                       'call the stop() certainly')
             try:
                 sys.__stderr__.write(errmsg)
-            except:
+            except Exception:
                 # if sys module is already unloaded by GC
                 print(errmsg)
 
@@ -280,7 +280,7 @@ class SkipIfNotInstalledDecorator(object):
                 try:
                     self.search_server()
                     cond = False  # found
-                except:
+                except Exception:
                     cond = True  # not found
 
             return skipIf(cond, "%s not found" % self.name)(fn)
@@ -313,5 +313,5 @@ def get_path_of(name):
             return path.rstrip().decode('utf-8')
         else:
             return None
-    except:
+    except Exception:
         return None
