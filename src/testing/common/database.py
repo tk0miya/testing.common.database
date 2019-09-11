@@ -12,6 +12,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+"""Provide base classes and utility functions for using in testing.* packages."""
 
 import copy
 import os
@@ -21,15 +22,18 @@ import socket
 import tempfile
 import subprocess
 from time import sleep
+from timeit import default_timer as timestamp
 from shutil import copytree, rmtree
-from datetime import datetime
 import collections
 
 
 class DatabaseFactory(object):
+    """DatabaseFactory is an object which can produce instances of a database."""
+
     target_class = None
 
     def __init__(self, **kwargs):
+        """Initialize a DatabaseFactory instance."""
         self.cache = None
         self.settings = kwargs
 
@@ -54,15 +58,19 @@ class DatabaseFactory(object):
             self.settings['copy_data_from'] = self.cache.get_data_directory()
 
     def __call__(self):
+        """Create and return an instance of a Database made by this factory."""
         return self.target_class(**self.settings)
 
     def clear_cache(self):
+        """Clear the cache of this DatabaseFactory."""
         if self.cache:
             self.settings['copy_data_from'] = None
             self.cache.cleanup()
 
 
 class Database(object):
+    """Represents an instance of a database process."""
+
     DEFAULT_BOOT_TIMEOUT = 10.0
     DEFAULT_KILL_TIMEOUT = 10.0
     DEFAULT_SETTINGS = {}
@@ -70,6 +78,7 @@ class Database(object):
     terminate_signal = signal.SIGTERM
 
     def __init__(self, **kwargs):
+        """Create an instance of a Database."""
         self.name = self.__class__.__name__
         self.settings = dict(self.DEFAULT_SETTINGS)
         self.settings.update(kwargs)
@@ -101,9 +110,11 @@ class Database(object):
             raise
 
     def initialize(self):
+        """Initialize database object."""
         pass
 
     def setup(self):
+        """Copy datafiles and prepare execution environment."""
         # copy data files
         if self.settings['copy_data_from']:
             try:
@@ -128,12 +139,15 @@ class Database(object):
             raise
 
     def get_data_directory(self):
+        """Return path to data directory of database."""
         pass
 
     def initialize_database(self):
+        """Initialize database server (not the object)."""
         pass
 
     def start(self):
+        """Do necessary setup, and start database server."""
         if self.child_process:
             return  # already started
 
@@ -160,49 +174,60 @@ class Database(object):
             logger.close()
 
     def get_server_commandline(self):
-        raise NotImplemented
+        """Command line to invoke your database server."""
+        raise NotImplementedError
 
     def wait_booting(self):
+        """Wait for the database server process start and be available."""
         boot_timeout = self.settings.get('boot_timeout', self.DEFAULT_BOOT_TIMEOUT)
-        exec_at = datetime.now()
+        exec_at = timestamp()
         while True:
             if self.child_process.poll() is not None:
-                raise RuntimeError("*** failed to launch %s ***\n" % self.name +
-                                   self.read_bootlog())
+                raise RuntimeError(
+                    "*** failed to launch %s ***\n" % self.name + self.read_bootlog()
+                )
 
             if self.is_server_available():
                 break
 
-            if (datetime.now() - exec_at).seconds > boot_timeout:
-                raise RuntimeError("*** failed to launch %s (timeout) ***\n" % self.name +
-                                   self.read_bootlog())
+            if (timestamp() - exec_at) > boot_timeout:
+                raise RuntimeError(
+                    "*** failed to launch %s (timeout) ***\n" % self.name + self.read_bootlog()
+                )
 
             sleep(0.1)
 
     def prestart(self):
+        """Perform any actions which are necessary before the database server is started."""
         if self.settings['port'] is None:
             self.settings['port'] = get_unused_port()
 
     def poststart(self):
+        """Perform necessary actions after the database is started, before it is ready to use."""
         pass
 
     def is_server_available(self):
+        """Return True if the database is ready to accept connections, otherwise False."""
         return False
 
     def is_alive(self):
+        """Return boolean for is the database running (may not be ready to accept connections)."""
         return self.child_process and self.child_process.poll() is None
 
     @property
     def server_pid(self):
+        """Return the process id of the database server process."""
         return getattr(self.child_process, 'pid', None)
 
     def stop(self, _signal=signal.SIGTERM):
+        """Send _signal to child process and cleanup temporary directory."""
         try:
             self.terminate(_signal)
         finally:
             self.cleanup()
 
     def terminate(self, _signal=None):
+        """Send _signal to child process and wait for it to exit raising RuntimeError if it does not."""
         if self.child_process is None:
             return  # not started
 
@@ -214,9 +239,9 @@ class Database(object):
 
         try:
             self.child_process.send_signal(_signal)
-            killed_at = datetime.now()
+            killed_at = timestamp()
             while self.child_process.poll() is None:
-                if (datetime.now() - killed_at).seconds > self.DEFAULT_KILL_TIMEOUT:
+                if (timestamp() - killed_at) > self.DEFAULT_KILL_TIMEOUT:
                     self.child_process.kill()
                     raise RuntimeError("*** failed to shutdown postgres (timeout) ***\n" + self.read_bootlog())
 
@@ -227,6 +252,7 @@ class Database(object):
         self.child_process = None
 
     def cleanup(self):
+        """Cleanup any temporary files from disk."""
         if self.child_process is not None:
             return
 
@@ -235,6 +261,7 @@ class Database(object):
             self._use_tmpdir = False
 
     def read_bootlog(self):
+        """Return the contents of the database log as a string."""
         try:
             with open(os.path.join(self.base_dir, '%s.log' % self.name)) as log:
                 return log.read()
@@ -242,6 +269,7 @@ class Database(object):
             raise RuntimeError("failed to open file:%s.log: %r" % (self.name, exc))
 
     def __del__(self):
+        """When there are no remaining references to the database, cleanup."""
         try:
             self.stop()
         except Exception:
@@ -255,19 +283,25 @@ class Database(object):
                 print(errmsg)
 
     def __enter__(self):
+        """Entry point for database as a context manager (with database() as ...)."""
         return self
 
     def __exit__(self, *args):
+        """Stop database and cleanup when exiting with block."""
         self.stop()
 
 
 class SkipIfNotInstalledDecorator(object):
+    """Decorator that skips the testcase if a database command is not found."""
+
     name = ''
 
     def search_server(self):
+        """Return some x such that bool(x) is truthy iff the server is found."""
         pass  # raise exception if not found
 
     def __call__(self, arg=None):
+        """Return a decorator which skips decorated function if the required server is not present."""
         if sys.version_info < (2, 7):
             from unittest2 import skipIf
         else:
@@ -292,15 +326,16 @@ class SkipIfNotInstalledDecorator(object):
 
 
 def get_unused_port():
+    """Return a random unused port."""
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.bind(('localhost', 0))
     _, port = sock.getsockname()
     sock.close()
-
     return port
 
 
 def get_path_of(name):
+    """Return the path to the given executable, or None if not found."""
     if os.name == 'nt':
         which = 'where'
     else:
