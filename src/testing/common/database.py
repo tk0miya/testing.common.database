@@ -23,7 +23,10 @@ import subprocess
 from time import sleep
 from shutil import copytree, rmtree
 from datetime import datetime
-import collections
+try:
+    from collections.abc import Callable
+except ImportError:
+    from collections import Callable
 
 
 class DatabaseFactory(object):
@@ -285,7 +288,7 @@ class SkipIfNotInstalledDecorator(object):
 
             return skipIf(cond, "%s not found" % self.name)(fn)
 
-        if isinstance(arg, collections.Callable):  # execute as simple decorator
+        if isinstance(arg, Callable):  # execute as simple decorator
             return decorator(arg, None)
         else:  # execute with path argument
             return decorator
